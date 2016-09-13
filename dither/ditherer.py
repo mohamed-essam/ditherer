@@ -1,14 +1,27 @@
 from PIL import Image
 
-def _get_luminance(color):
-    #RGB
-    return (max(color)+min(color))/2.0
+color_pallete = [(0,0,0), (255,0,0), (0,255,0), (0,0,255), (255,255,255)]
 
-def _get_color(lum):
-    if lum <= 127.0:
-        return ((0,0,0), lum)
-    else:
-        return  ((255,255,255), lum - 255)
+def adjust_error(color, error):
+    return (color[0] + error[0], color[1] + error[1], color[2] + error[2])
+
+def color_dist(c1, c2):
+    return (abs(c1[0]-c2[0]) + abs(c1[1] - c2[1]) + abs(c1[2] - c2[2]))
+
+def color_error(c1, c2):
+    return c1[0]-c2[0], c1[1] - c2[1], c1[2] - c2[2]
+
+def _get_color(color):
+    closest_color = color_pallete[0]
+    min_dist = color_dist(color, color_pallete[0])
+    error = color_error(color, color_pallete[0])
+    for cp in color_pallete:
+        new_color_dist = color_dist(color, cp)
+        if(new_color_dist < min_dist):
+            closest_color = cp
+            min_dist = new_color_dist
+            error = color_error(color, cp)
+    return closest_color, error
 
 def add_error(forward_array, index, error, size):
     i, j = index
@@ -77,11 +90,14 @@ def dither_image(image, algorithm = "sierra3"):
     width, height = image.size
     pixels = image.getdata()
     new_pixels = []
-    forward_array = [0.0 for _ in range(width*height)]
+    forward_array_r = [0.0 for _ in range(width*height)]
+    forward_array_g = [0.0 for _ in range(width*height)]
+    forward_array_b = [0.0 for _ in range(width*height)]
     for i in range (height):
         for j in range(width):
-            new_color, error = _get_color(_get_luminance(pixels[i*width+j]) + forward_array[i*width+j])
+            new_color, error = _get_color(adjust_error(pixels[i*width+j], (forward_array_r[i*width+j], forward_array_g[i*width+j], forward_array_b[i*width+j])))
             new_pixels.append(new_color)
-            distribute_error(forward_array, (i,j), error, image.size, algorithm)
+            distribute_error(forward_array_r, (i,j), error[0], image.size, algorithm)
+            distribute_error(forward_array_g, (i,j), error[1], image.size, algorithm)
+            distribute_error(forward_array_b, (i,j), error[2], image.size, algorithm)
     image.putdata(new_pixels)
-    return forward_array

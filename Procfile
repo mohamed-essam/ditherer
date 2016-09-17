@@ -1,1 +1,1 @@
-gunicorn -t=300 wsgi
+web: gunicorn -t=300 wsgi

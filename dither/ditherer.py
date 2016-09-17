@@ -56,15 +56,20 @@ def distribute_error(forward_array, index,error, size, algorithm, forward_index)
 def dither_image(image, algorithm = 0, color_pallete = [(0,0,0), (255,255,255)]):
     width, height = image.size
     pixels = image.getdata()
-    new_pixels = []
+    new_pixels = [0 for _ in range(width*height)]
     forward_array_r = [0.0 for _ in range(3*width)]
-    forward_array_g = [0.0 for _ in range(3*width)]
     forward_array_b = [0.0 for _ in range(3*width)]
+    forward_array_g = [0.0 for _ in range(3*width)]
     forward_index = 0
+    next_print = 0
+    progress = 0
     for i in range (height):
         for j in range(width):
-            new_color, error = _get_color(adjust_error(pixels[i*width+j], (forward_array_r[forward_index*width+j], forward_array_g[forward_index*width+j], forward_array_b[forward_index*width+j])), color_pallete)
-            new_pixels.append(new_color)
+            if(i*width+j == next_print):
+                print(progress)
+                progress += 10
+                next_print += width*height/10
+            new_pixels[i*width+j], error = _get_color(adjust_error(pixels[i*width+j], (forward_array_r[forward_index*width+j], forward_array_g[forward_index*width+j], forward_array_b[forward_index*width+j])), color_pallete)
             distribute_error(forward_array_r, (i,j), error[0] * BLEEDING_THRESHOLD, image.size, algorithm, forward_index)
             distribute_error(forward_array_g, (i,j), error[1] * BLEEDING_THRESHOLD, image.size, algorithm, forward_index)
             distribute_error(forward_array_b, (i,j), error[2] * BLEEDING_THRESHOLD, image.size, algorithm, forward_index)

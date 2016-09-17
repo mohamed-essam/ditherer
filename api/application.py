@@ -18,6 +18,7 @@ def dither():
         try:
             color_pallete = json.loads(request.form['pallete'])
         except:
+            print request.form['pallete']
             pass
         finally:
             if(len(color_pallete) == 0):

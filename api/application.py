@@ -14,28 +14,28 @@ def dither():
             return "", 400
         f = request.files['file']
         image = Image.open(f)
-        color_pallete = [(255,255,255), (0,0,0)]
+        color_palette = [(255,255,255), (0,0,0)]
         try:
-            color_pallete = json.loads(request.form['pallete'])
+            color_palette = json.loads(request.form['palette'])
         except:
-            print request.form['pallete']
+            print request.form['palette']
             pass
         finally:
-            if(len(color_pallete) == 0):
+            if(len(color_palette) == 0):
                 return '',400
-            for i in range(len(color_pallete)):
-                if(len(color_pallete[i]) != 3):
+            for i in range(len(color_palette)):
+                if(len(color_palette[i]) != 3):
                     return "", 400
-                color_pallete[i] = (color_pallete[i][0], color_pallete[i][1], color_pallete[i][2])
+                color_palette[i] = (color_palette[i][0], color_palette[i][1], color_palette[i][2])
         algo = 0
-        print(color_pallete)
+        print(color_palette)
         try:
-            if('algo' in request.form and int(request.form['algo']) in range (len(ALGORITHMS))):
-                algo = int(request.form['algo'])
+            if('algorithm' in request.form and int(request.form['algorithm']) in range(8)):
+                algo = int(request.form['algorithm'])
         except:
-            pass
-        ditherer.dither_image(image, algo, color_pallete)
+           print request.form['algorithm']
+        ditherer.dither_image(image, algo, color_palette)
         f.close()
         image_output = StringIO()
-        image.save(image_output, "PNG")
+        image.save(image_output, "JPEG")
         return Response(image_output.getvalue(), mimetype="image/png")

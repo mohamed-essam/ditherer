@@ -1,126 +1,88 @@
 #include <vector>
 #include <stdlib.h>
 #include <stdio.h>
+#include <utility>
+#include <unistd.h>
 
 using namespace std;
 
-extern "C" class ditherer{
-public:
-  vector<vector<int> > color_palette;
-  int h, w;
-  int forward_index;
-  vector<vector<int> > forward_array;
-  vector<vector<int> > algorithm;
-  int algorithm_divider;
-  int algo_offset;
-  int index;
+int BLEED_THRESHOLD = 90;
 
-  ditherer(){
-    index = 0;
-    forward_index = 0;
-  }
-
-  int color_dist(int r1, int g1, int b1, int r2, int g2, int b2){
-    return abs(r1-r2) + abs(g1-g2) + abs(b1-b2);
-  }
-
-  int* color_error(int r1, int g1, int b1, int r2, int g2, int b2){
-    int* ret = new int[3];
-    ret[0] = r1-r2, ret[1] = g1-g2, ret[2] = b1-b2;
-    return ret;
-  }
-
-  int* get_color(int r, int g, int b){
-    int mn = 1e9;
-    int best_index = -1;
-    for(int i = 0; i < color_palette.size(); i++){
-      int dst = color_dist(r,g,b,color_palette[i][0],color_palette[i][1],color_palette[i][2]);
-      if(dst < mn){
-        mn = dst;
-        best_index = i;
-      }
-    }
-    int* ret2 = color_error(r,g,b,color_palette[best_index][0],color_palette[best_index][1],color_palette[best_index][2]);
-    int* ret= new int[6];
-    ret[0] = ret2[0], ret[1] = ret2[1], ret[2] = ret2[2],
-    ret[3] = color_palette[best_index][0],
-    ret[4] = color_palette[best_index][1],
-    ret[5] = color_palette[best_index][2];
-    printf("%d %d %d\n", ret[0], ret[1], ret[2]);
-    delete[] ret2;
-    return ret;
-  }
-
-  void add_error(int i, int j, int error, int fa_i, int h_offset){
-    if(i < 0 || j < 0 || i >= h || j >= w){
-      return;
-    }
-    forward_array[fa_i][((forward_index+h_offset)%3)*w+j] += error;
-  }
-
-  void add_color_pallete(int r, int g, int b){
-    vector<int> tp(3,r);
-    tp[1] = g, tp[2] = b;
-    color_palette.push_back(tp);
-  }
-
-  void distribute_error(int fa_i, int i, int j, int error){
-    for(int k = 0; k < algorithm.size(); k++){
-      for(int l = -algo_offset; l <= algo_offset; l++){
-        add_error(i+k, l+j, (error*algorithm[k][l+algo_offset]) / algorithm_divider, fa_i, k);
-      }
-    }
-  }
-
-  int dither(int r, int g, int b){
-    int new_r = r + forward_array[0][forward_index*w+(index%w)];
-    int new_g = g + forward_array[1][forward_index*w+(index%w)];
-    int new_b = b + forward_array[2][forward_index*w+(index%w)];
-    int* color_error = get_color(new_r, new_g, new_b);
-    distribute_error(0, index/w, index%w, color_error[0]);
-    distribute_error(1, index/w, index%w, color_error[1]);
-    distribute_error(2, index/w, index%w, color_error[2]);
-    index++;
-    if(index%w == 0){
-      for(int i = 0; i < 3; i++){
-        for(int j = 0; j < algo_offset*2+1; j++){
-          forward_array[i][forward_index*w+j] = 0;
-        }
-      }
-      forward_index++;
-      forward_index%=3;
-    }
-    int ret = 0;
-    ret += color_error[3];
-    ret = ret << 8;
-    ret += color_error[4];
-    ret = ret << 8;
-    ret += color_error[5];
-    delete[] color_error;
-    return ret;
-  }
-
+struct color{
+  int r,g,b;
 };
 
-extern "C" ditherer* get_ditherer(int h, int w, int ah, int aw, int div){
-  ditherer* ret = new ditherer();
-  ret->h=h, ret->w=w;
-  ret->algorithm.assign(ah, vector<int>(aw, 0));
-  ret->algo_offset = aw/2;
-  ret->algorithm_divider = div;
-  ret->forward_array.assign(3, vector<int>(3*w, 0));
-  printf("%d %d\n", ret->algo_offset, div);
-  return ret;
+int color_dist(color a, color b){
+  return abs(a.r-b.r) + abs(a.g-b.g) + abs(a.b-b.b);
 }
 
-extern "C" void put_algorithm_data(int val, int i, int j, ditherer* dith){
-  dith->algorithm[i][j] = val;
+color color_error(color a, color b){
+  return {a.r-b.r, a.g-b.g, a.b-b.b};
 }
 
-extern "C" void add_color_pallete(int r, int g, int b, ditherer* dith){
-  dith->add_color_pallete(r,g,b);
+color get_color(color c, int* colors, int color_count){
+  int minimum_dist = color_dist(c, {colors[0], colors[1], colors[2]});
+  int best_index = 0;
+  for(int i = 1; i < color_count; i++){
+    int dist = color_dist(c, {colors[i*3], colors[i*3+1], colors[i*3+2]});
+    if(dist < minimum_dist){
+      minimum_dist = dist;
+      best_index = i;
+    }
+  }
+  return {colors[best_index*3], colors[best_index*3+1], colors[best_index*3+2]};
 }
 
-extern "C" int dither_color(int r, int g, int b, ditherer* dith){
-  return dith -> dither(r,g,b);
+void add_error(int* forward_array, int i, int j, int error, int width, int height, int forward_index){
+  if(i < 0 || j < 0 || i >= height || j >= width) return;
+  forward_array[forward_index*width+j] += error;
+}
+
+void distribute_error(int i, int j, int* forward_array, int error, int width, int height, int forward_index, int* algorithm, int a_height, int a_offset, int a_divisor){
+  for(int k = 0; k < a_height; k++){
+    for(int l = -a_offset; l <= a_offset; l++){
+      add_error(forward_array, i+k, l+j, (error*algorithm[k*(a_offset*2+1)+l+a_offset]) / a_divisor, width, height, (forward_index+k)%3);
+    }
+  }
+}
+
+extern "C" void dither(int* r, int* g, int* b, int height, int width, int* algorithm, int a_height, int a_offset, int a_divisor, int* colors, int color_count){
+  printf("BEFORE");
+  sleep(5);
+  printf("AFTER1");
+  int* forward_array_r = new int[3*width];
+  int* forward_array_g = new int[3*width];
+  int* forward_array_b = new int[3*width];
+  int forward_index = 0;
+  printf("AFTER2");
+  sleep(5);
+  printf("AFTER3");
+  for(int i = 0; i < 3*width; i++){
+    forward_array_r[i] = forward_array_g[i] = forward_array_b[i] = 0;
+  }
+  for(int i = 0; i < height; i++){
+    for(int j = 0; j < width; j++){
+      color s = {r[i*width+j] + forward_array_r[forward_index*width+j], g[i*width+j]+ forward_array_g[forward_index*width+j], b[i*width+j] + forward_array_b[forward_index*width+j]};
+      color new_color = get_color(s, colors, color_count);
+      color new_error = color_error(s, new_color);
+      distribute_error(i, j, forward_array_r, (new_error.r * BLEED_THRESHOLD) / 100, width, height, forward_index, algorithm, a_height, a_offset, a_divisor);
+      distribute_error(i, j, forward_array_g, (new_error.g * BLEED_THRESHOLD) / 100, width, height, forward_index, algorithm, a_height, a_offset, a_divisor);
+      distribute_error(i, j, forward_array_b, (new_error.b * BLEED_THRESHOLD) / 100, width, height, forward_index, algorithm, a_height, a_offset, a_divisor);
+      r[i*width+j] = new_color.r;
+      g[i*width+j] = new_color.g;
+      b[i*width+j] = new_color.b;
+    }
+    for(int j = 0; j < width; j++){
+      forward_array_r[forward_index*width+j] = forward_array_g[forward_index*width+j] = forward_array_b[forward_index*width+j] = 0;
+    }
+    forward_index++;
+    forward_index%=3;
+  }
+  delete[] forward_array_r;
+  delete[] forward_array_g;
+  delete[] forward_array_b;
+}
+
+extern "C" void free_memory(int* to_free){
+  delete[] to_free;
 }

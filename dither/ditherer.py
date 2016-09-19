@@ -22,12 +22,14 @@ def _get_color(color, color_palette):
     #         closest_color = cp
     #         min_dist = new_color_dist
     #         error = color_error(color, cp)
+    if(closest_color[0] > 1000000000):
+        print("DAFUQ")
     return closest_color[1], color_error(color, closest_color[1])
 
 def add_error(forward_array, index, error, size, forward_index):
     i, j = index
     w, h = size
-    if i < 0 or i >= h or j < 0 or j >= w:
+    if j < 0 or j >= w:
         return
     forward_array[forward_index*w+j] += error
 
@@ -74,8 +76,10 @@ def dither_image(image, algorithm = 0, color_palette = [(0,0,0), (255,255,255)])
             distribute_error(forward_array_r, (i,j), error[0] * BLEEDING_THRESHOLD, image.size, algorithm, forward_index)
             distribute_error(forward_array_g, (i,j), error[1] * BLEEDING_THRESHOLD, image.size, algorithm, forward_index)
             distribute_error(forward_array_b, (i,j), error[2] * BLEEDING_THRESHOLD, image.size, algorithm, forward_index)
-        for j in range(width):
-            forward_array_r[forward_index*width+j] = forward_array_g[forward_index*width+j] = forward_array_b[forward_index*width+j] = 0.0
+        if i + 1 < height:
+            for j in range(width):
+                forward_array_r[forward_index*width+j] = forward_array_g[forward_index*width+j] = forward_array_b[forward_index*width+j] = 0.0
         forward_index+=1
         forward_index %= 3
     image.putdata(new_pixels)
+    return forward_array_r, forward_array_g, forward_array_b

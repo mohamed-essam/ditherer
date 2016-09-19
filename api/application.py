@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, Response, flash
 from PIL import Image
-from dither import ditherer
+from dither import c_dither_wrapper
 from tempfile import NamedTemporaryFile
 from StringIO import StringIO
 import json
@@ -19,7 +19,6 @@ def dither():
             color_palette = json.loads(request.form['palette'])
         except:
             print request.form['palette']
-            pass
         finally:
             if(len(color_palette) == 0):
                 return '',400
@@ -28,13 +27,12 @@ def dither():
                     return "", 400
                 color_palette[i] = (color_palette[i][0], color_palette[i][1], color_palette[i][2])
         algo = 0
-        print(color_palette)
         try:
             if('algorithm' in request.form and int(request.form['algorithm']) in range(8)):
                 algo = int(request.form['algorithm'])
         except:
            print request.form['algorithm']
-        ditherer.dither_image(image, algo, color_palette)
+        c_dither_wrapper.dither_image(image, algo, color_palette)
         f.close()
         image_output = StringIO()
         image.save(image_output, "JPEG")

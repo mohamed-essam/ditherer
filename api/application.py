@@ -7,7 +7,7 @@ import json
 
 application = Flask(__name__)
 
-@application.route('/', methods=['POST'])
+@application.route('/dither/', methods=['POST'])
 def dither():
     if request.method == 'POST':
         if 'file' not in request.files:
@@ -15,17 +15,19 @@ def dither():
         f = request.files['file']
         image = Image.open(f)
         color_palette = [(255,255,255), (0,0,0)]
-        try:
-            color_palette = json.loads(request.form['palette'])
-        except:
-            print request.form['palette']
-        finally:
-            if(len(color_palette) == 0):
-                return '',400
-            for i in range(len(color_palette)):
-                if(len(color_palette[i]) != 3):
-                    return "", 400
-                color_palette[i] = (color_palette[i][0], color_palette[i][1], color_palette[i][2])
+        if 'palette' in request.form:
+            try:
+                tmp = json.loads(request.form['palette'])
+                color_palette = tmp
+            except:
+                print request.form['palette']
+            finally:
+                if(len(color_palette) == 0):
+                    return '',400
+                for i in range(len(color_palette)):
+                    if(len(color_palette[i]) != 3):
+                        return "", 400
+                    color_palette[i] = (color_palette[i][0], color_palette[i][1], color_palette[i][2])
         algo = 0
         try:
             if('algorithm' in request.form and int(request.form['algorithm']) in range(8)):

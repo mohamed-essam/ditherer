@@ -17,8 +17,6 @@ def dither_image(image, algorithm = 0, color_palette = [(0,0,0), (255,255,255)])
     width, height = image.size
     pixels = image.getdata()
     cfunc = CDLL("./dither/c_dither.so")
-    print("RGB_S")
-    sleep(3)
     r = RawArray('i', width*height)
     g = RawArray('i', width*height)
     b = RawArray('i', width*height)
@@ -27,8 +25,6 @@ def dither_image(image, algorithm = 0, color_palette = [(0,0,0), (255,255,255)])
             r[i*width+j] = pixels[i*width+j][0]
             g[i*width+j] = pixels[i*width+j][1]
             b[i*width+j] = pixels[i*width+j][2]
-    print("RGB_E")
-    sleep(3)
     alg = []
     for i in ALGORITHM_DATA[algorithm][0]:
         for j in i:
@@ -38,21 +34,14 @@ def dither_image(image, algorithm = 0, color_palette = [(0,0,0), (255,255,255)])
         color_pal.append(i[0])
         color_pal.append(i[1])
         color_pal.append(i[2])
-    print("ARR_S")
-    sleep(3)
     alg_array_type = c_int * len(alg)
     cp_array_type = c_int * len(color_pal)
-    print("ARR_E")
-    sleep(3)
-    print("START")
-    sleep(2)
     cfunc.dither(byref(r), byref(g), byref(b),
      c_int(height), c_int(width),
       byref(alg_array_type(*alg)),
        c_int(len(ALGORITHM_DATA[algorithm][0])),
         c_int(ALGORITHM_DATA[algorithm][1]), c_int(ALGORITHM_DATA[algorithm][2]),
          byref(cp_array_type(*color_pal)), c_int(len(color_palette)))
-    print("MID")
     for i in xrange(width*height):
         image.putpixel((i%width, i/width), (r[i], g[i], b[i]))
     del r

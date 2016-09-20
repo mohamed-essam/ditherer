@@ -6,7 +6,6 @@ from StringIO import StringIO
 import json
 import urllib2
 from base64 import b64encode
-import os
 
 application = Flask(__name__, static_url_path='')
 

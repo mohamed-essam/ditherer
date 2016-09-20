@@ -1,11 +1,151 @@
-  <html>
-  <head></head>
+<html>
+  <head>
+    <script src="https://code.jquery.com/jquery-3.1.0.js" integrity="sha256-slogkvB1K3VOkzAI8QITxV3VzpOnkeNVsKvtkYLMjfk=" crossorigin="anonymous"></script>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    <script src="/js/jscolor.js"></script>
+
+    <script type="text/javascript">
+    function hexToRgb(hex) {
+      var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : null;
+    }
+    </script>
+
+    <script>
+      $(document).ready(function(){
+        $(document).on('submit', '#upload-form', function(e) {
+            e.preventDefault();
+        });
+
+        $("#uploadButton").click(function(){
+          if($("#fileUpload")[0].files.length == 0){
+            $("#no-file-alert").show();
+            return;
+          }
+          $("#no-file-alert").hide();
+          $("#img-object").attr("style", "width: 100%; display:none").attr("src", "");
+          var fd = new FormData();
+          fd.append("file", $("#fileUpload")[0].files[0]);
+          fd.append("base64", "True");
+          var colors = '[';
+          $("#colors-container").children().each(function(){
+            if(colors != "[")
+              colors = colors + ",";
+            colors = colors + $(this).attr("value");
+          });
+          colors = colors + ']';
+          fd.append("palette", colors);
+          var $this = $(this);
+          $this.button('loading');
+          $.ajax({url:"/dither",
+                  type:"post",
+                  data:fd,
+                  processData: false,
+                  contentType: false
+                }).done(function(ret){
+                  $("#img-object").attr("src", "data:image/png;base64," + ret).attr("style", "width: 100%");
+                }).fail(function(a,b){
+                  $("#img-contianer").html(a+b);
+                }).always(function(){
+                  $this.button('reset');
+                });
+        });
+        $('#color-value').keypress(function (e) {
+          var key = e.which;
+          if(key == 13)  // the enter key code
+          {
+            $('#add-color-button').click();
+            return false;
+          }
+        });
+        $("#add-color-button").click(function(){
+          var ret = hexToRgb($("#color-value").val());
+          var rgb = "[" + ret.r + "," + ret.g + "," + ret.b + "]";
+          $("#colors-container").children().each(function(){
+          if($(this).attr("value") == rgb){
+              rgb = null;
+            }
+          });
+          if(rgb != null){
+            $("#colors-container").append("<button style=\"background-color: " + $("#color-value").val() + "\" value = \"" + rgb + "\"type=\"button\" class=\"btn btn-labeled\"><span class=\"btn-label\"><i class=\"glyphicon glyphicon-remove\"></i></span>#" + $("#color-value").val() + "</button>");
+            $($("#colors-container").children().last()).on("click", function(){
+              $(this).remove();
+            });
+          }
+        });
+      });
+    </script>
+  </head>
   <body>
-    <form action="/dither" method=post enctype=multipart/form-data>
-      <p><input type=file name=file>
-      <input type=text name=algo>
-      <input type=text name=pallete>
-      <input type=submit value=Upload>
-    </form>
+    <nav class="navbar navbar-default">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#">Ditherer</a>
+        </div>
+      </div>
+    </nav>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-6 col-md-offset-3">
+          <div class="panel panel-primary">
+            <div class="panel-heading">
+              <h3 class="panel-title">Choose image to dither</h3>
+            </div>
+            <div class="panel-body">
+              <div class="alert alert-danger" style="display:none;" id="no-file-alert">
+                No file selected!
+              </div>
+              <form action="#" method=post enctype=multipart/form-data id="upload-form">
+                <div class="form-group">
+                  <label for="fileUpload">File input</label>
+                  <input type=file name=file id="fileUpload" class="form-control-file">
+                  <small id="fileHelp" class="form-text text-muted">Max image size 1280x720 pixels.</small>
+                </div>
+                <div class="form-group">
+                  <label for="algorithmSelect">Algorithm</label>
+                  <select class="form-control" id="algorithmSelect" name=algorithm>
+                    <option value=0>3-row Sierra</option>
+                    <option value=1>2-row Sierra</option>
+                    <option value=2>Sierra Lite</option>
+                    <option value=3>Burkes</option>
+                    <option value=4>Atkinson</option>
+                    <option value=5>Stucki</option>
+                    <option value=6>Jarvice-Judice-Ninke</option>
+                    <option value=7>Floyd Steinberg</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <input class="jscolor" value="000000" id="color-value">
+                  <button type="button" class="btn btn-xs btn-primary" id="add-color-button">Add Color</button>
+                  <div id="colors-container">
+                  </div>
+                </div>
+                <button type="button" class="btn btn-lg btn-primary btn-block" id="uploadButton" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> Processing Image">Upload</button>
+                <i class="fa fa-circle-o-notch fa-spin" id="spinner" style="display:none"></i>
+              </form>
+              <div id="img-contianer" style="text-align: center;">
+                <img style="display: none; width=100%" id="img-object"/>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
   </body>
 </html>

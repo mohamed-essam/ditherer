@@ -1,19 +1,43 @@
-from flask import Flask, render_template, request, Response, flash
+from flask import Flask, render_template, request, Response, flash, send_from_directory
 from PIL import Image
 from dither import c_dither_wrapper
 from tempfile import NamedTemporaryFile
 from StringIO import StringIO
 import json
+import urllib2
+from base64 import b64encode
+import os
 
-application = Flask(__name__)
+application = Flask(__name__, static_url_path='')
 
-@application.route('/dither/', methods=['POST'])
+@application.route('/<path:path>')
+def static_files(path):
+    print(path)
+    return send_from_directory('static', path)
+
+@application.route('/')
+def mainpage():
+    return render_template("upload.html")
+
+IMAGE_SIZE_LIMIT = 923601
+
+@application.route('/dither', methods=['POST'])
 def dither():
     if request.method == 'POST':
-        if 'file' not in request.files:
-            return "", 400
-        f = request.files['file']
-        image = Image.open(f)
+        f = ''
+        if 'file' in request.files:
+            f = request.files['file']
+        elif 'link' in request.form:
+            f = urllib2.urlopen(request.form['link'])
+        else:
+            print "A"
+            return 'A', 400
+        image = ''
+        try:
+            image = Image.open(f)
+        except:
+            print "B"
+            return 'B', 400
         color_palette = [(255,255,255), (0,0,0)]
         if 'palette' in request.form:
             try:
@@ -23,10 +47,12 @@ def dither():
                 print request.form['palette']
             finally:
                 if(len(color_palette) == 0):
-                    return '',400
+                    print "C"
+                    return 'C',400
                 for i in range(len(color_palette)):
                     if(len(color_palette[i]) != 3):
-                        return "", 400
+                        print "D"
+                        return "D", 400
                     color_palette[i] = (color_palette[i][0], color_palette[i][1], color_palette[i][2])
         algo = 0
         try:
@@ -38,4 +64,7 @@ def dither():
         f.close()
         image_output = StringIO()
         image.save(image_output, "JPEG")
-        return Response(image_output.getvalue(), mimetype="image/png")
+        if 'base64' in request.form and request.form['base64'] == 'True':
+            return Response(b64encode(image_output.getvalue()), mimetype="image/jpeg")
+        else:
+            return Response(image_output.getvalue(), mimetype="image/jpeg")

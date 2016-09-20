@@ -47,16 +47,10 @@ void distribute_error(int i, int j, int* forward_array, int error, int width, in
 }
 
 extern "C" void dither(int* r, int* g, int* b, int height, int width, int* algorithm, int a_height, int a_offset, int a_divisor, int* colors, int color_count){
-  printf("BEFORE");
-  sleep(5);
-  printf("AFTER1");
   int* forward_array_r = new int[3*width];
   int* forward_array_g = new int[3*width];
   int* forward_array_b = new int[3*width];
   int forward_index = 0;
-  printf("AFTER2");
-  sleep(5);
-  printf("AFTER3");
   for(int i = 0; i < 3*width; i++){
     forward_array_r[i] = forward_array_g[i] = forward_array_b[i] = 0;
   }

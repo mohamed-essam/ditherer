@@ -3,7 +3,11 @@ Dithers an image into a given color palette (defaults to black and white)
 
 ##Usage
 
-A POST request is sent to the server using the following parameters:
+Method|Route|Response
+------|-----|--------
+ POST |/dither|image/jpeg file
+
+parameters:
 
 Key|Required|Value
 ---|--------|-----

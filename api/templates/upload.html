@@ -15,6 +15,8 @@
 
     <script src="/js/jscolor.js"></script>
 
+    <title>Ditherer</title>
+
     <script type="text/javascript">
     function hexToRgb(hex) {
       var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -33,23 +35,32 @@
         });
 
         $("#uploadButton").click(function(){
-          if($("#fileUpload")[0].files.length == 0){
+          if($("#fileUpload")[0].files.length == 0 && $("#file-link").val() == ""){
             $("#file-alert").html("No file selected!");
             $("#file-alert").fadeIn(200);
             return;
           }
-          var file = $("#fileUpload")[0].files[0];
-          var fileType = file["type"];
-          var ValidImageTypes = ["image/gif", "image/jpeg", "image/png"];
-          if ($.inArray(fileType, ValidImageTypes) < 0) {
-            $("#file-alert").html("File selected isn't a valid image!");
-            $("#file-alert").fadeIn(200);
-            return;
+          var file = null;
+          var link = "";
+          if($("#fileUpload")[0].files.length != 0){
+            file = $("#fileUpload")[0].files[0];
+            var fileType = file["type"];
+            var ValidImageTypes = ["image/gif", "image/jpeg", "image/png"];
+            if ($.inArray(fileType, ValidImageTypes) < 0) {
+              $("#file-alert").html("File selected isn't a valid image!");
+              $("#file-alert").fadeIn(200);
+              return;
+            }
           }
+          else
+            link = $("#file-link").val();
           $("#file-alert").fadeOut(200);
           $("#img-object").attr("style", "width: 100%; display:none").attr("src", "");
           var fd = new FormData();
-          fd.append("file", $("#fileUpload")[0].files[0]);
+          if(file != null)
+            fd.append("file", $("#fileUpload")[0].files[0]);
+          else
+            fd.append("link", link);
           fd.append("base64", "True");
           var colors = '[';
           $("#colors-container").children().each(function(){
@@ -96,7 +107,7 @@
           });
           if(rgb != null){
             bgr = "rgb(" + (255-ret.r) + "," + (255-ret.g) + "," + (255-ret.b) + ")";
-            $("#colors-container").append("<button style=\"font-family: Courier; border-color: " + bgr + "; margin: 2; display: none; background-color: " + $("#color-value").val() + "\" value = \"" + rgb + "\"type=\"button\" class=\"btn btn-labeled\"><span class=\"btn-label\"><i class=\"glyphicon glyphicon-remove\"></i></span>#" + $("#color-value").val() + "</button>");
+            $("#colors-container").append("<button style=\"font-family: Courier; border-color: " + bgr + "; margin: 2; display: none; background-color: " + $("#color-value").val() + "\" value = \"" + rgb + "\"type=\"button\" class=\"btn btn-labeled\"><span class=\"btn-label\"><i class=\"glyphicon glyphicon-remove\"></i></span>#" + $("#color-value").val().toUpperCase() + "</button>");
             $($("#colors-container").children().last()).on("click", function(){
               $this = $(this);
               $(this).fadeOut({queue:false, complete:function(){$this.remove();}});
@@ -124,15 +135,19 @@
               <h3 class="panel-title">Choose image to dither</h3>
             </div>
             <div class="panel-body">
-              <div class="alert alert-danger" style="display:none;" id="file-alert">
-
-              </div>
+              <div class="alert alert-danger" style="display:none;" id="file-alert"></div>
               <form action="#" method=post enctype=multipart/form-data id="upload-form">
                 <div class="form-group">
                   <label for="fileUpload">File input</label>
                   <input type=file name=file id="fileUpload" class="form-control-file" accept="image/*">
                   <small id="fileHelp" class="form-text text-muted">Max image size 1280x720 pixels.</small>
                 </div>
+                <h4 style="text-align:center">OR</h4>
+                <div class="form-group">
+                  <label for="file-link">Link to image</label>
+                  <input id="file-link" class="form-control">
+                </div>
+                <hr/>
                 <div class="form-group">
                   <label for="algorithmSelect">Algorithm</label>
                   <select class="form-control" id="algorithm-select" name=algorithm>
@@ -146,12 +161,14 @@
                     <option value=7>Floyd Steinberg</option>
                   </select>
                 </div>
+                <hr/>
                 <div class="form-group">
                   <input class="jscolor" value="000000" id="color-value">
                   <button type="button" class="btn btn-xs btn-primary" id="add-color-button">Add Color</button>
                   <div id="colors-container">
                   </div>
                 </div>
+                <hr/>
                 <button type="button" class="btn btn-lg btn-primary btn-block" id="uploadButton" data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> Processing Image">Upload</button>
                 <i class="fa fa-circle-o-notch fa-spin" id="spinner" style="display:none"></i>
               </form>

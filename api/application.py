@@ -18,7 +18,7 @@ def static_files(path):
 def mainpage():
     return render_template("upload.html")
 
-IMAGE_SIZE_LIMIT = 923601
+IMAGE_SIZE_LIMIT = 2076601
 
 @application.route('/dither', methods=['POST'])
 def dither():
@@ -27,7 +27,12 @@ def dither():
         if 'file' in request.files:
             f = request.files['file']
         elif 'link' in request.form:
-            f = urllib2.urlopen(request.form['link'])
+            try:
+                f = urllib2.urlopen(request.form['link'])
+            except:
+                response = Response("Image url invalid!")
+                response.status_code = 400
+                return response
         else:
             response = Response("No image file or url!")
             response.status_code = 400

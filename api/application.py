@@ -39,6 +39,10 @@ def dither():
             response = Response("Invalid image file!")
             response.status_code = 400
             return response
+        if(image.size.width * image.size.height > IMAGE_SIZE_LIMIT):
+            response = Response("Image file too large!")
+            response.status_code = 400
+            return response
         color_palette = [(255,255,255), (0,0,0)]
         if 'palette' in request.form:
             try:

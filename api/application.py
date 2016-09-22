@@ -39,7 +39,7 @@ def dither():
             response = Response("Invalid image file!")
             response.status_code = 400
             return response
-        if(image.size.width * image.size.height > IMAGE_SIZE_LIMIT):
+        if(image.size[0] * image.size[1] > IMAGE_SIZE_LIMIT):
             response = Response("Image file too large!")
             response.status_code = 400
             return response

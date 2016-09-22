@@ -34,10 +34,19 @@
 
         $("#uploadButton").click(function(){
           if($("#fileUpload")[0].files.length == 0){
-            $("#no-file-alert").show();
+            $("#file-alert").html("No file selected!");
+            $("#file-alert").fadeIn(200);
             return;
           }
-          $("#no-file-alert").hide();
+          var file = $("#fileUpload")[0].files[0];
+          var fileType = file["type"];
+          var ValidImageTypes = ["image/gif", "image/jpeg", "image/png"];
+          if ($.inArray(fileType, ValidImageTypes) < 0) {
+            $("#file-alert").html("File selected isn't a valid image!");
+            $("#file-alert").fadeIn(200);
+            return;
+          }
+          $("#file-alert").fadeOut(200);
           $("#img-object").attr("style", "width: 100%; display:none").attr("src", "");
           var fd = new FormData();
           fd.append("file", $("#fileUpload")[0].files[0]);
@@ -46,10 +55,12 @@
           $("#colors-container").children().each(function(){
             if(colors != "[")
               colors = colors + ",";
-            colors = colors + $(this).attr("value");
+            if($(this).attr("value") != "")
+              colors = colors + $(this).attr("value");
           });
           colors = colors + ']';
           fd.append("palette", colors);
+          fd.append("algorithm", $('#algorithm-select option:selected').val());
           var $this = $(this);
           $this.button('loading');
           $.ajax({url:"/dither",
@@ -59,8 +70,10 @@
                   contentType: false
                 }).done(function(ret){
                   $("#img-object").attr("src", "data:image/png;base64," + ret).attr("style", "width: 100%");
-                }).fail(function(a,b){
-                  $("#img-contianer").html(a+b);
+                }).fail(function(a,b,c){
+                  //$("#img-contianer").html(a.status+",,"+a.statusText+",,"+a.responseText+",,"+b+",,"+c);
+                  $("#file-alert").html(a.responseText);
+                  $("#file-alert").fadeIn(200);
                 }).always(function(){
                   $this.button('reset');
                 });
@@ -77,15 +90,19 @@
           var ret = hexToRgb($("#color-value").val());
           var rgb = "[" + ret.r + "," + ret.g + "," + ret.b + "]";
           $("#colors-container").children().each(function(){
-          if($(this).attr("value") == rgb){
+            if($(this).attr("value") == rgb){
               rgb = null;
             }
           });
           if(rgb != null){
-            $("#colors-container").append("<button style=\"background-color: " + $("#color-value").val() + "\" value = \"" + rgb + "\"type=\"button\" class=\"btn btn-labeled\"><span class=\"btn-label\"><i class=\"glyphicon glyphicon-remove\"></i></span>#" + $("#color-value").val() + "</button>");
+            bgr = "rgb(" + (255-ret.r) + "," + (255-ret.g) + "," + (255-ret.b) + ")";
+            $("#colors-container").append("<button style=\"font-family: Courier; border-color: " + bgr + "; margin: 2; display: none; background-color: " + $("#color-value").val() + "\" value = \"" + rgb + "\"type=\"button\" class=\"btn btn-labeled\"><span class=\"btn-label\"><i class=\"glyphicon glyphicon-remove\"></i></span>#" + $("#color-value").val() + "</button>");
             $($("#colors-container").children().last()).on("click", function(){
-              $(this).remove();
+              $this = $(this);
+              $(this).fadeOut({queue:false, complete:function(){$this.remove();}});
+              $(this).attr("value", "");
             });
+            $($("#colors-container").children().last()).fadeIn({queue:false});
           }
         });
       });
@@ -107,18 +124,18 @@
               <h3 class="panel-title">Choose image to dither</h3>
             </div>
             <div class="panel-body">
-              <div class="alert alert-danger" style="display:none;" id="no-file-alert">
-                No file selected!
+              <div class="alert alert-danger" style="display:none;" id="file-alert">
+
               </div>
               <form action="#" method=post enctype=multipart/form-data id="upload-form">
                 <div class="form-group">
                   <label for="fileUpload">File input</label>
-                  <input type=file name=file id="fileUpload" class="form-control-file">
+                  <input type=file name=file id="fileUpload" class="form-control-file" accept="image/*">
                   <small id="fileHelp" class="form-text text-muted">Max image size 1280x720 pixels.</small>
                 </div>
                 <div class="form-group">
                   <label for="algorithmSelect">Algorithm</label>
-                  <select class="form-control" id="algorithmSelect" name=algorithm>
+                  <select class="form-control" id="algorithm-select" name=algorithm>
                     <option value=0>3-row Sierra</option>
                     <option value=1>2-row Sierra</option>
                     <option value=2>Sierra Lite</option>

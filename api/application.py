@@ -29,36 +29,42 @@ def dither():
         elif 'link' in request.form:
             f = urllib2.urlopen(request.form['link'])
         else:
-            print "A"
-            return 'A', 400
+            response = Response("No image file or url!")
+            response.status_code = 400
+            return response
         image = ''
         try:
             image = Image.open(f)
         except:
-            print "B"
-            return 'B', 400
+            response = Response("Invalid image file!")
+            response.status_code = 400
+            return response
         color_palette = [(255,255,255), (0,0,0)]
         if 'palette' in request.form:
             try:
                 tmp = json.loads(request.form['palette'])
-                color_palette = tmp
+                if(len(tmp)):
+                    color_palette = tmp
             except:
                 print request.form['palette']
             finally:
                 if(len(color_palette) == 0):
-                    print "C"
-                    return 'C',400
+                    response = Response("Empty color palette!")
+                    response.status_code = 400
+                    return response
                 for i in range(len(color_palette)):
                     if(len(color_palette[i]) != 3):
-                        print "D"
-                        return "D", 400
+                        response = Response("Invalid color palette!")
+                        response.status_code = 400
+                        return response
                     color_palette[i] = (color_palette[i][0], color_palette[i][1], color_palette[i][2])
         algo = 0
         try:
             if('algorithm' in request.form and int(request.form['algorithm']) in range(8)):
                 algo = int(request.form['algorithm'])
         except:
-           print request.form['algorithm']
+            print request.form['algorithm']
+        print algo
         c_dither_wrapper.dither_image(image, algo, color_palette)
         f.close()
         image_output = StringIO()

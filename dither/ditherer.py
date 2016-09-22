@@ -14,16 +14,6 @@ def color_error(c1, c2):
 def _get_color(color, color_palette):
     dists = [(color_dist(color, x),x) for x in color_palette]
     closest_color = min(dists)
-    # min_dist = color_dist(color, color_palette[0])
-    # error = color_error(color, color_palette[0])
-    # for cp in color_palette:
-    #     new_color_dist = color_dist(color, cp)
-    #     if(new_color_dist < min_dist):
-    #         closest_color = cp
-    #         min_dist = new_color_dist
-    #         error = color_error(color, cp)
-    if(closest_color[0] > 1000000000):
-        print("DAFUQ")
     return closest_color[1], color_error(color, closest_color[1])
 
 def add_error(forward_array, index, error, size, forward_index):

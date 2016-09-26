@@ -6,6 +6,14 @@ from StringIO import StringIO
 import json
 import urllib2
 from base64 import b64encode
+from rq import Queue
+from worker import conn
+from pickle import dumps, loads
+#from cryptography.fernet import Fernet
+
+#pickle_key = '8xT1cP2YYXzumIDABuJ3PZ1GFvtTyJIbxwHh33eucrM='
+
+q = Queue(connection = conn)
 
 application = Flask(__name__, static_url_path='')
 
@@ -18,7 +26,7 @@ def static_files(path):
 def mainpage():
     return render_template("upload.html")
 
-IMAGE_SIZE_LIMIT = 2076601
+IMAGE_SIZE_LIMIT = 207660100
 
 @application.route('/dither', methods=['POST'])
 def dither():
@@ -73,12 +81,17 @@ def dither():
                 algo = int(request.form['algorithm'])
         except:
             print request.form['algorithm']
-        print algo
-        c_dither_wrapper.dither_image(image, algo, color_palette)
+        job = q.enqueue(c_dither_wrapper.dither_image, image, algo, color_palette, request.form.get('base64', 'False'))
         f.close()
-        image_output = StringIO()
-        image.save(image_output, "JPEG")
-        if 'base64' in request.form and request.form['base64'] == 'True':
-            return Response(b64encode(image_output.getvalue()), mimetype="image/jpeg")
+        return Response(job.get_id())
+
+@application.route('/result', methods = ['POST'])
+def get_result():
+    try:
+        job = q.fetch_job(request.form.get('job_id', ''))
+        if(job.is_finished == False):
+            return 'wa', 102
         else:
-            return Response(image_output.getvalue(), mimetype="image/jpeg")
+            return job.result
+    except:
+        return '', 401

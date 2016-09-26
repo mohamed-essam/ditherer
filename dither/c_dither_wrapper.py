@@ -13,7 +13,7 @@ ALGORITHM_DATA = [
 ([[0, 0, 7],[3, 5, 1]], 1, 16)                                                  #floyd
 ]
 
-def dither_image(image, algorithm = 0, color_palette = [(0,0,0), (255,255,255)]):
+def dither_image(image, algorithm = 0, color_palette = [(0,0,0), (255,255,255)], base = False):
     width, height = image.size
     pixels = image.getdata()
     cfunc = CDLL("./dither/c_dither.so")
@@ -47,3 +47,10 @@ def dither_image(image, algorithm = 0, color_palette = [(0,0,0), (255,255,255)])
     del r
     del g
     del b
+    return image
+    image_output = StringIO()
+    image.save(image_output, "JPEG")
+    if base:
+        return Response(b64encode(image_output.getvalue()), mimetype="image/jpeg")
+    else:
+        return Response(image_output.getvalue(), mimetype="image/jpeg")

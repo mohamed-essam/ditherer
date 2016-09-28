@@ -1,5 +1,7 @@
 from ctypes import CDLL, c_int, POINTER, byref
 from time import sleep
+import os
+import subprocess
 from multiprocessing import RawArray
 
 ALGORITHM_DATA = [
@@ -16,6 +18,11 @@ ALGORITHM_DATA = [
 def dither_image(image, algorithm = 0, color_palette = [(0,0,0), (255,255,255)]):
     width, height = image.size
     pixels = image.getdata()
+    if('c_dither.so' not in os.listdir("./dither/")):
+        command1 = "g++ -std=c++11 -O3 -shared -c -fPIC c_dither.cpp -o c_dither.o"
+        command2 = "g++ -shared -Wl,-soname,c_dither.so -o c_dither.so c_dither.o"
+        subprocess.Popen(command1.split(), cwd='./dither/').wait()
+        subprocess.Popen(command2.split(), cwd='./dither/').wait()
     cfunc = CDLL("./dither/c_dither.so")
     r = RawArray('i', width*height)
     g = RawArray('i', width*height)

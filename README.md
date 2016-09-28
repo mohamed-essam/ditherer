@@ -39,5 +39,5 @@ This image was processed using a pallete of 8 colors and using the 3-row Sierra 
 (http://i.imgur.com/1GtbL5M.jpg)
 
 # Demo
-[Heroku Demo](http://young-island-22764.herokuapp.com)
+[Heroku Demo](http://ditheringapi.herokuapp.com)
 ![Heroku Demo Screenshot](http://i.imgur.com/3Nyl1d1.png)

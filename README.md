@@ -1,7 +1,7 @@
 # Ditherer
 Dithers an image into a given color palette (defaults to black and white)
 
-##Usage
+## Usage
 
 Method|Route|Response
 ------|-----|--------
@@ -23,7 +23,7 @@ Value|Algorithm|Value|Algorithm
 4|Atkinson|5|Stucki
 6|Jarvice-Judice-Ninke|7|Floyd Steinberg
 
-#Algorithms
+# Algorithms
 
 ![Approve](http://i.imgur.com/Ihvw0lL.jpg)
 

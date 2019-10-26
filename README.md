@@ -30,13 +30,11 @@ Value|Algorithm|Value|Algorithm
 # Example
 
 This image was processed using a pallete of 8 colors and using the 3-row Sierra algorithm
-![Original vs Dithered]
-(http://i.imgur.com/g7mOuuZ.jpg)
+![Original vs Dithered](http://i.imgur.com/g7mOuuZ.jpg)
 
 ### Color palette used
 
-![Color Palette]
-(http://i.imgur.com/1GtbL5M.jpg)
+![Color Palette](http://i.imgur.com/1GtbL5M.jpg)
 
 # Demo
 [Heroku Demo](http://ditheringapi.herokuapp.com)
